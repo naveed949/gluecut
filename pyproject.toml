@@ -1,0 +1,29 @@
+[project]
+name = "gluecut"
+version = "0.1.0"
+description = "Research CLI: cut LLM prompt/parse glue with System One typed decisions"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "requests>=2.34.2",
+    "vegaml>=0.9.0",
+]
+
+[project.scripts]
+triage = "triage.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["triage"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,64 @@
+"""System One path: typed decide() — almost no semantic glue."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import vegaml
+
+from triage.contract import VEGA_QUESTIONS, Ticket, TriageDecision, decide_action
+
+_model: Any = None
+
+
+def _load_model():
+    global _model
+    if _model is None:
+        _model = vegaml.load()
+    return _model
+
+
+class VegaTriageEngine:
+    name = "vega"
+
+    def triage(self, ticket: Ticket) -> TriageDecision:
+        model = _load_model()
+        out = model.decide(ticket.as_state(), VEGA_QUESTIONS)
+        answers = out["answers"]
+
+        team_a = answers["team"]
+        pri_a = answers["priority"]
+        hum_a = answers["needs_human"]
+
+        abstain = bool(
+            team_a.get("abstain")
+            or pri_a.get("abstain")
+            or hum_a.get("abstain")
+            or team_a.get("unbound")
+        )
+        needs_human = bool(hum_a.get("boolean", 0.0) >= 0.5) or abstain
+        conf = float(team_a.get("confidence") or 0.0)
+
+        return TriageDecision(
+            team=None if abstain else team_a.get("choice"),
+            priority=None if pri_a.get("abstain") else int(pri_a.get("score", 1)),
+            needs_human=needs_human,
+            abstain=abstain,
+            action=decide_action(abstain=abstain, needs_human=needs_human),
+            engine=self.name,
+            confidence=conf,
+            probs={
+                "team": team_a.get("probs"),
+                "priority": pri_a.get("probs"),
+                "needs_human": hum_a.get("probs"),
+            },
+            orchestration={
+                "prompt_chars": 0,
+                "parse_attempts": 0,
+                "repair_rounds": 0,
+                "schema_failures": 0,
+                "latency_ms": out.get("latency_ms"),
+                "n_tokens": out.get("n_tokens"),
+            },
+            raw=out,
+        )
