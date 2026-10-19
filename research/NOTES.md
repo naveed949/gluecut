@@ -60,8 +60,23 @@ Fill after you run eval (paste JSON summaries into `METRICS.md`):
 
 > LLM engineers still write the deterministic shell. System One removes the prompt/parse/repair/confidence scaffold that usually wraps a generative model when the job is a **typed decision**.
 
+## Results so far (2026-10-19)
+
+See [`METRICS.md`](METRICS.md) for raw numbers. Short read:
+
+| Signal | Finding |
+|--------|---------|
+| Glue LOC | LLM engine **+160 code lines** vs Vega (`213` vs `53`) |
+| Live LLM accuracy | Team **72.2%**, priority **66.7%**, needs_human **88.9%**, forced-wrong **0%** |
+| Vega accuracy | Team **77.8%**, priority **38.9%**, needs_human **50%**, forced-wrong **5.6%** |
+| Orchestration | Live LLM: clean JSON (no repairs); Vega: no parse layer at all |
+| Escalation | Both ~**44%** `needs_review` on this fixture set |
+
+**Interpretation for LLM engineers:** the complexity claim holds — even a well-behaved live model still needs the prompt/parse/validate scaffold in code. On this small set, Vega is competitive on team routing; the live LLM wins priority/`needs_human` and forced-wrong. Accuracy is not a blowout either way; **glue removal** is the stable win.
+
 ## Non-claims
 
 - System One does not replace auth, cache, schema validation of *inputs*, or feature flags.
 - Offline simulated LLM accuracy is not evidence against (or for) frontier models.
 - Vega is not “more deterministic than if/else”; the **system** stays typed and policy-bounded.
+- These fixture scores are not a published benchmark; n=18 is a research sandbox.
