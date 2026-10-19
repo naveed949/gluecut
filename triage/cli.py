@@ -59,14 +59,22 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     d = sub.add_parser("decide", help="Triage one ticket")
-    d.add_argument("--engine", choices=("vega", "llm"), required=True)
+    d.add_argument(
+        "--engine",
+        choices=("vega", "llm", "llm_structured"),
+        required=True,
+    )
     d.add_argument("--text", help="Ticket body")
     d.add_argument("--file", help="Read ticket body from file")
     d.add_argument("--subject", default="", help="Optional subject")
     d.set_defaults(func=cmd_decide)
 
     e = sub.add_parser("eval", help="Score an engine on fixtures/tickets.jsonl")
-    e.add_argument("--engine", choices=("vega", "llm"), required=True)
+    e.add_argument(
+        "--engine",
+        choices=("vega", "llm", "llm_structured"),
+        required=True,
+    )
     e.add_argument("--fixtures", help="JSONL path (default: fixtures/tickets.jsonl)")
     e.add_argument("--verbose", action="store_true", help="Include per-case rows")
     e.set_defaults(func=cmd_eval)

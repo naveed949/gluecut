@@ -17,12 +17,14 @@ For a fixed support-ticket triage job, how much **orchestration complexity** (pr
 
 ## What differs
 
-| Concern | LLM engine | Vega engine |
-|--------|------------|-------------|
-| How meaning is obtained | Chat completion + prose | Typed `decide()` |
-| Structured output | Prompt + extract + validate + repair | Native choice / score / boolean |
-| Uncertainty | DIY `confidence` floor | Calibrated probs + `abstain` / `unbound` |
-| Glue LOC | See `triage complexity` | See `triage complexity` |
+| Concern | `llm` (freeform) | `llm_structured` | Vega |
+|--------|------------------|------------------|------|
+| How meaning is obtained | Chat + prose | Chat + JSON mode | Typed `decide()` |
+| Structured output | Fence extract + repair | `json.loads` + schema retry | Native choice / score / boolean |
+| Uncertainty | DIY confidence floor | Same | Calibrated probs + abstain |
+| Glue LOC | See `fair_deltas` in `triage complexity` | Smaller semantic delta | Baseline |
+
+Fair complexity: `http_client` and `offline_simulator` are reported separately so critics cannot call the HTTP client “triage logic.”
 
 ## How to run
 
@@ -37,14 +39,17 @@ uv run python -m triage decide --engine llm --text "Please refund my last invoic
 # Fixture eval
 uv run python -m triage eval --engine vega
 uv run python -m triage eval --engine llm
+uv run python -m triage eval --engine llm_structured
 ```
 
 ### LLM engine modes
 
-- **Offline (default):** no `OPENAI_API_KEY` → `SimulatedJsonLlm` emits JSON strings so parse/repair glue still runs. Use this to inspect orchestration metrics and glue LOC — **not** for fair accuracy vs Vega.
-- **Live:** set `OPENAI_API_KEY`, optional `OPENAI_BASE_URL`, `OPENAI_MODEL` (default `gpt-4o-mini`).
+- **`llm` freeform:** prose → extract/repair (classic glue).
+- **`llm_structured`:** `response_format=json_object` — glue shrinks, does not vanish.
+- **Offline (default):** no `OPENAI_API_KEY` → `SimulatedJsonLlm`.
+- **Live:** set `OPENAI_API_KEY`, optional `OPENAI_BASE_URL`, `OPENAI_MODEL`.
 
-Fixture `broken-json-marker` (`[[force_bad_json]]`) forces a messy first LLM reply so repair rounds show up offline.
+Fixture `broken-json-marker` (`[[force_bad_json]]`) is a freeform glue probe with `eval.accuracy=false` (excluded from accuracy denominators).
 
 ## Metrics to record
 
@@ -66,13 +71,13 @@ See [`METRICS.md`](METRICS.md) for raw numbers. Short read:
 
 | Signal | Finding |
 |--------|---------|
-| Glue LOC | LLM engine **+160 code lines** vs Vega (`213` vs `53`) |
-| Live LLM accuracy | Team **72.2%**, priority **66.7%**, needs_human **88.9%**, forced-wrong **0%** |
-| Vega accuracy | Team **77.8%**, priority **38.9%**, needs_human **50%**, forced-wrong **5.6%** |
-| Orchestration | Live LLM: clean JSON (no repairs); Vega: no parse layer at all |
-| Escalation | Both ~**44%** `needs_review` on this fixture set |
+| Fair semantic LOC | Freeform **+46** / structured **+38** vs Vega core (HTTP excluded) |
+| Team accuracy (n_scored=17) | **Tied 76.5%** — Vega / llm / llm_structured |
+| Priority / needs_human | Live LLM **much stronger** (0.65 / 0.94 vs Vega 0.29 / 0.47) |
+| Forced-wrong team | Vega **5.9%**; both LLM paths **0%** |
+| Parse layer | Vega **0** attempts; LLMs 1.0 clean (no repairs this run) |
 
-**Interpretation for LLM engineers:** the complexity claim holds — even a well-behaved live model still needs the prompt/parse/validate scaffold in code. On this small set, Vega is competitive on team routing; the live LLM wins priority/`needs_human` and forced-wrong. Accuracy is not a blowout either way; **glue removal** is the stable win.
+**Interpretation for LLM engineers:** on this set, **team quality ties**; LLM wins secondary labels and safer auto-route. The System One win that still stands cleanly is **semantic glue LOC** (and zero parse stack). JSON mode helps code shape vs freeform, not accuracy vs freeform here.
 
 ## Non-claims
 

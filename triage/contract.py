@@ -12,7 +12,7 @@ from typing import Any, Literal
 TEAMS = ("billing", "technical", "sales")
 Team = Literal["billing", "technical", "sales"]
 Action = Literal["route", "needs_review"]
-EngineName = Literal["vega", "llm"]
+EngineName = Literal["vega", "llm", "llm_structured"]
 
 PRIORITY_LEVELS = (0, 1, 2, 3)
 

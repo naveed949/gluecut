@@ -16,14 +16,15 @@ DEFAULT_FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "ticket
 @dataclass
 class CaseResult:
     id: str
-    ok_team: bool
-    ok_priority: bool
-    ok_needs_human: bool
+    scored: bool
+    ok_team: bool | None
+    ok_priority: bool | None
+    ok_needs_human: bool | None
     forced_wrong_team: bool
     action: str
     abstain: bool
     predicted_team: str | None
-    expected_team: str
+    expected_team: str | None
     orchestration: dict[str, Any] = field(default_factory=dict)
 
 
@@ -31,6 +32,8 @@ class CaseResult:
 class EvalReport:
     engine: str
     n: int
+    n_scored: int
+    n_glue_only: int
     team_accuracy: float
     priority_accuracy: float
     needs_human_accuracy: float
@@ -43,8 +46,7 @@ class EvalReport:
     cases: list[CaseResult] = field(default_factory=list)
 
     def to_json(self) -> dict[str, Any]:
-        d = asdict(self)
-        return d
+        return asdict(self)
 
 
 def load_fixtures(path: Path | None = None) -> list[dict[str, Any]]:
@@ -59,6 +61,11 @@ def load_fixtures(path: Path | None = None) -> list[dict[str, Any]]:
     return rows
 
 
+def _scored(row: dict[str, Any]) -> bool:
+    """Glue-only probes set eval.accuracy=false and are excluded from accuracy rates."""
+    return row.get("eval", {}).get("accuracy", True) is not False
+
+
 def run_eval(engine_name: EngineName, fixtures_path: Path | None = None) -> EvalReport:
     engine = get_engine(engine_name)
     fixtures = load_fixtures(fixtures_path)
@@ -67,34 +74,42 @@ def run_eval(engine_name: EngineName, fixtures_path: Path | None = None) -> Eval
     team_ok = pri_ok = hum_ok = 0
     forced_wrong = review = abstain_n = 0
     parse_attempts = repair_rounds = schema_failures = 0
+    n_scored = 0
+    n_glue = 0
 
     for row in fixtures:
         ticket = Ticket(body=row["body"], subject=row.get("subject", ""), source="fixture")
         decision = engine.triage(ticket)
-        exp = row["expected"]
+        scored = _scored(row)
+        exp = row.get("expected") or {}
 
-        ok_t = decision.team == exp["team"] if decision.team is not None else False
-        # If abstain/review, team may be None — count as incorrect for accuracy,
-        # but not as forced_wrong.
-        if decision.team is None and decision.action == "needs_review":
-            ok_t = False
-        ok_p = decision.priority == exp["priority"] if decision.priority is not None else False
-        ok_h = decision.needs_human == exp["needs_human"]
+        if scored:
+            n_scored += 1
+            ok_t = decision.team == exp["team"] if decision.team is not None else False
+            if decision.team is None and decision.action == "needs_review":
+                ok_t = False
+            ok_p = (
+                decision.priority == exp["priority"] if decision.priority is not None else False
+            )
+            ok_h = decision.needs_human == exp["needs_human"]
+            fw = (
+                decision.team is not None
+                and decision.action == "route"
+                and decision.team != exp["team"]
+            )
+            if ok_t:
+                team_ok += 1
+            if ok_p:
+                pri_ok += 1
+            if ok_h:
+                hum_ok += 1
+            if fw:
+                forced_wrong += 1
+        else:
+            n_glue += 1
+            ok_t = ok_p = ok_h = None
+            fw = False
 
-        fw = (
-            decision.team is not None
-            and decision.action == "route"
-            and decision.team != exp["team"]
-        )
-
-        if ok_t:
-            team_ok += 1
-        if ok_p:
-            pri_ok += 1
-        if ok_h:
-            hum_ok += 1
-        if fw:
-            forced_wrong += 1
         if decision.action == "needs_review":
             review += 1
         if decision.abstain:
@@ -108,6 +123,7 @@ def run_eval(engine_name: EngineName, fixtures_path: Path | None = None) -> Eval
         cases.append(
             CaseResult(
                 id=row["id"],
+                scored=scored,
                 ok_team=ok_t,
                 ok_priority=ok_p,
                 ok_needs_human=ok_h,
@@ -115,28 +131,32 @@ def run_eval(engine_name: EngineName, fixtures_path: Path | None = None) -> Eval
                 action=decision.action,
                 abstain=decision.abstain,
                 predicted_team=decision.team,
-                expected_team=exp["team"],
+                expected_team=exp.get("team"),
                 orchestration={
                     "parse_attempts": orch.get("parse_attempts"),
                     "repair_rounds": orch.get("repair_rounds"),
                     "schema_failures": orch.get("schema_failures"),
                     "client": orch.get("client"),
+                    "mode": orch.get("mode"),
                 },
             )
         )
 
-    n = len(fixtures) or 1
+    n_all = len(fixtures) or 1
+    denom = n_scored or 1
     return EvalReport(
         engine=engine_name,
         n=len(fixtures),
-        team_accuracy=team_ok / n,
-        priority_accuracy=pri_ok / n,
-        needs_human_accuracy=hum_ok / n,
-        forced_wrong_team_rate=forced_wrong / n,
-        needs_review_rate=review / n,
-        abstain_rate=abstain_n / n,
-        mean_parse_attempts=parse_attempts / n,
-        mean_repair_rounds=repair_rounds / n,
-        mean_schema_failures=schema_failures / n,
+        n_scored=n_scored,
+        n_glue_only=n_glue,
+        team_accuracy=team_ok / denom,
+        priority_accuracy=pri_ok / denom,
+        needs_human_accuracy=hum_ok / denom,
+        forced_wrong_team_rate=forced_wrong / denom,
+        needs_review_rate=review / n_all,
+        abstain_rate=abstain_n / n_all,
+        mean_parse_attempts=parse_attempts / n_all,
+        mean_repair_rounds=repair_rounds / n_all,
+        mean_schema_failures=schema_failures / n_all,
         cases=cases,
     )
