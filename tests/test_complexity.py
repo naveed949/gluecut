@@ -15,6 +15,7 @@ def test_fair_delta_excludes_http_and_still_positive_for_freeform():
     assert fair["llm_freeform_semantic_minus_vega"] > 0
     # Structured shrinks vs freeform semantic delta but stays above Vega core.
     assert fair["llm_structured_semantic_minus_vega"] > 0
+    assert fair["llm_schema_semantic_minus_vega"] > 0
     assert (
         fair["llm_structured_semantic_minus_vega"]
         < fair["llm_freeform_semantic_minus_vega"]

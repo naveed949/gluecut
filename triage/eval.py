@@ -10,7 +10,10 @@ from typing import Any
 from triage.contract import EngineName, Ticket
 from triage.engines import get_engine
 
-DEFAULT_FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "tickets.jsonl"
+DEFAULT_FIXTURES = (
+    Path(__file__).resolve().parent.parent / "fixtures" / "triage" / "held_out.jsonl"
+)
+DEV_FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "triage" / "dev.jsonl"
 
 
 @dataclass

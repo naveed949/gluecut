@@ -1,66 +1,60 @@
 # gluecut
 
-Cut LLM prompt/parse/repair glue. Keep a deterministic shell. Use System One (Vega) for typed triage decisions.
+Cut LLM prompt/parse/repair glue. Keep a deterministic shell. Use System One (Vega) for typed decisions.
 
-Compare **LLM freeform glue**, **LLM JSON-mode**, and **Vega** on the same support-ticket triage job.
+Domains: **support triage** + **payment failure → reason code**.
 
-Audience: engineers already using LLMs for classification — see [`research/NOTES.md`](research/NOTES.md).
+Pitch docs for staff engineers: [`research/ADOPT.md`](research/ADOPT.md) · frozen labels: [`research/RUBRIC.md`](research/RUBRIC.md).
 
 ## Setup
 
 ```bash
-# Core CLI + tests (no torch / Vega weights)
 uv sync --group dev
-
-# Local Vega engine (downloads weights on first decide/eval)
-uv sync --group dev --extra vega
+uv sync --group dev --extra vega   # local Vega weights
 ```
-
-First Vega run downloads weights (`vegaml.load()`).
 
 ## Commands
 
 ```bash
-# LOC + fair breakdown (excludes HTTP client from semantic delta)
+# Fair LOC breakdown
 uv run python -m triage complexity
 
-# One ticket
+# Strong baseline = Pydantic + OpenAI json_schema (not fence-parse)
+uv run python -m triage decide --engine llm_schema --text "Please refund my last invoice."
 uv run python -m triage decide --engine vega --text "Please refund my last invoice."
-uv run python -m triage decide --engine llm --text "Please refund my last invoice."
-uv run python -m triage decide --engine llm_structured --text "Please refund my last invoice."
 
-# Labeled fixtures (glue probe excluded from accuracy denominators)
+# Held-out eval (≥100 triage cases)
+uv run python -m triage eval --engine llm_schema
 uv run python -m triage eval --engine vega
-uv run python -m triage eval --engine llm --verbose
-uv run python -m triage eval --engine llm_structured
 
-# One-shot shareable report → research/report.md (+ report.html)
-uv run python -m triage compare
+# Shadow mode → research/disagreements.md (+ forced-wrong, abstain, $)
+uv run python -m triage shadow --engines vega llm_schema
+
+# Cost/latency at fixed QPS → research/bench.md
+uv run python -m triage bench --engines vega llm_schema --qps 1 --limit 30
+
+# Second domain
+uv run python -m triage payments-eval --engine llm_schema
+uv run python -m triage payments-eval --engine vega
+
+# Shareable compare report
+uv run python -m triage compare --engines vega llm_schema
 ```
 
-Optional live LLM (otherwise offline JSON simulator):
-
-```bash
-export OPENAI_API_KEY=...
-# optional: OPENAI_BASE_URL OPENAI_MODEL
-uv run python -m triage compare
-```
-
-Share [`research/report.md`](research/report.md) (or open `research/report.html`).
+Set `OPENAI_API_KEY` for live LLM columns (otherwise simulated).
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `triage/contract.py` | Shared schema + deterministic `route` / `needs_review` policy |
-| `triage/engines/vega_engine.py` | System One `decide()` |
-| `triage/engines/llm_engine.py` | Freeform: extract JSON → validate → repair |
-| `triage/engines/llm_structured_engine.py` | JSON mode: `json.loads` + validate (less glue) |
-| `triage/engines/llm_client.py` | HTTP / offline transport (excluded from fair semantic delta) |
-| `triage/engines/llm_parse.py` | Fence / embedded-JSON recovery |
-| `fixtures/tickets.jsonl` | Labeled cases (+ notes) |
-| `research/` | Notes, metrics, **report.md / report.html** |
-| `vega.py` | Minimal vegaml smoke script |
+| `research/ADOPT.md` | Adopt if / don’t adopt if |
+| `research/RUBRIC.md` | Frozen labeling rubric v1 |
+| `research/disagreements.md` | Shadow disagreement sheet (generated) |
+| `research/bench.md` | Cost/latency table (generated) |
+| `fixtures/triage/held_out.jsonl` | ≥100 scored triage cases |
+| `fixtures/payments/held_out.jsonl` | Payment failure cases |
+| `triage/engines/llm_schema_engine.py` | Strong LLM baseline |
+| `triage/payments.py` | Second domain |
 
 ## Tests
 
