@@ -1,11 +1,9 @@
 # Metrics log
 
-Latest shareable table: [`report.md`](report.md) (regenerate with `uv run python -m triage compare`).
+Latest shareable table: [`report.md`](report.md) (`gpt-4o-mini` live, 2026-10-21 18:36 UTC).
 
-- **2026-10-21 compare refresh:** Vega real + LLM **simulated** (`OPENAI_API_KEY` unset). Use for LOC; do not treat LLM accuracy columns as live-model evidence.
-- **2026-10-19 live LLM eval:** still the accuracy reference for freeform/structured vs Vega (below).
-
-Captured on 2026-10-19 (live LLM) unless noted.
+- **2026-10-21 live compare:** Vega + `llm` + `llm_structured` — canonical head-to-head (see report).
+- Spot-check `eval --engine llm` same day: team **76.5%**, forced-wrong **0%**, needs_human **88.2%** (run-to-run variance vs compare’s 94.1% is normal at n=17).
 
 ## Complexity (fair breakdown)
 

@@ -78,13 +78,13 @@ See [`METRICS.md`](METRICS.md) for raw numbers. Short read:
 
 | Signal | Finding |
 |--------|---------|
-| Fair semantic LOC | Freeform **+46** / structured **+38** vs Vega core (HTTP excluded) |
-| Team accuracy (n_scored=17) | **Tied 76.5%** — Vega / llm / llm_structured |
-| Priority / needs_human | Live LLM **much stronger** (0.65 / 0.94 vs Vega 0.29 / 0.47) |
+| Fair semantic LOC | Freeform **+45** / structured **+37** vs Vega core (HTTP excluded) |
+| Team accuracy (n_scored=17) | **Tied 76.5%** — Vega / llm / llm_structured (`gpt-4o-mini`) |
+| Priority / needs_human | Live LLM **much stronger** (~0.71 / ~0.94 vs Vega 0.29 / 0.47) |
 | Forced-wrong team | Vega **5.9%**; both LLM paths **0%** |
-| Parse layer | Vega **0** attempts; LLMs 1.0 clean (no repairs this run) |
+| Parse layer | Vega **0** attempts; live LLMs 1.0 clean (no repairs) |
 
-**Interpretation for LLM engineers:** on this set, **team quality ties**; LLM wins secondary labels and safer auto-route. The System One win that still stands cleanly is **semantic glue LOC** (and zero parse stack). JSON mode helps code shape vs freeform, not accuracy vs freeform here.
+**Interpretation for LLM engineers:** on this set, **team quality ties**; LLM wins secondary labels and safer auto-route. The System One win that still stands cleanly is **semantic glue LOC** (and zero parse stack). JSON mode helps code shape vs freeform, not accuracy vs freeform here. See [`report.md`](report.md).
 
 ## Non-claims
 

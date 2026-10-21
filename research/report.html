@@ -68,11 +68,11 @@
     <div id="report"></div>
     <pre id="md" style="display:none"># gluecut compare report
 
-Generated: `2026-10-21 18:20 UTC`
+Generated: `2026-10-21 18:36 UTC`
 
 Fixtures: `fixtures/tickets.jsonl` (n=18, n_scored=17)
 
-LLM client label (if present): `simulated` (set `OPENAI_API_KEY` for live models; otherwise simulated).
+LLM client label (if present): `gpt-4o-mini` (set `OPENAI_API_KEY` for live models; otherwise simulated).
 
 ## Head-to-head
 
@@ -80,14 +80,14 @@ LLM client label (if present): `simulated` (set `OPENAI_API_KEY` for live models
 |--------|--------|--------|--------|
 | Semantic LOC (fair) | 48 | 93 | 85 |
 | Fair delta vs Vega | 0 | +45 | +37 |
-| Team accuracy | 76.5% | 47.1% | 47.1% |
-| Priority accuracy | 29.4% | 29.4% | 29.4% |
-| Needs-human accuracy | 47.1% | 88.2% | 88.2% |
-| Forced-wrong team | 5.9% | 5.9% | 5.9% |
+| Team accuracy | 76.5% | 76.5% | 76.5% |
+| Priority accuracy | 29.4% | 70.6% | 70.6% |
+| Needs-human accuracy | 47.1% | 94.1% | 94.1% |
+| Forced-wrong team | 5.9% | 0.0% | 0.0% |
 | Needs-review rate | 44.4% | 44.4% | 44.4% |
-| Abstain rate | 16.7% | 44.4% | 44.4% |
-| Mean parse attempts | 0.00 | 1.06 | 1.00 |
-| Mean repair rounds | 0.00 | 0.06 | 0.00 |
+| Abstain rate | 16.7% | 16.7% | 11.1% |
+| Mean parse attempts | 0.00 | 1.00 | 1.00 |
+| Mean repair rounds | 0.00 | 0.00 | 0.00 |
 
 ## Fair complexity notes
 
