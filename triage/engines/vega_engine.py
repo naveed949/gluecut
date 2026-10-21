@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import vegaml
-
 from triage.contract import VEGA_QUESTIONS, Ticket, TriageDecision, decide_action
 
 _model: Any = None
@@ -14,6 +12,8 @@ _model: Any = None
 def _load_model():
     global _model
     if _model is None:
+        import vegaml
+
         _model = vegaml.load()
     return _model
 
