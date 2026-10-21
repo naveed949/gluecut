@@ -29,6 +29,10 @@ Fair complexity: `http_client` and `offline_simulator` are reported separately s
 ## How to run
 
 ```bash
+# Install (CI uses sync without vegaml; local Vega needs --extra vega)
+uv sync --group dev
+uv sync --group dev --extra vega
+
 # Complexity (no model download required for the LOC table)
 uv run python -m triage complexity
 

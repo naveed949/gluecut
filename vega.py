@@ -1,4 +1,7 @@
-"""Minimal vegaml smoke test. Prefer: uv run python -m triage decide --engine vega ..."""
+"""Minimal vegaml smoke test. Prefer: uv run python -m triage decide --engine vega ...
+
+Requires: uv sync --extra vega
+"""
 
 import vegaml
 

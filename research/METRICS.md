@@ -1,6 +1,11 @@
 # Metrics log
 
-Captured on 2026-10-19.
+Latest shareable table: [`report.md`](report.md) (regenerate with `uv run python -m triage compare`).
+
+- **2026-10-21 compare refresh:** Vega real + LLM **simulated** (`OPENAI_API_KEY` unset). Use for LOC; do not treat LLM accuracy columns as live-model evidence.
+- **2026-10-19 live LLM eval:** still the accuracy reference for freeform/structured vs Vega (below).
+
+Captured on 2026-10-19 (live LLM) unless noted.
 
 ## Complexity (fair breakdown)
 

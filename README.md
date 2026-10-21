@@ -9,7 +9,11 @@ Audience: engineers already using LLMs for classification — see [`research/NOT
 ## Setup
 
 ```bash
-uv sync
+# Core CLI + tests (no torch / Vega weights)
+uv sync --group dev
+
+# Local Vega engine (downloads weights on first decide/eval)
+uv sync --group dev --extra vega
 ```
 
 First Vega run downloads weights (`vegaml.load()`).
