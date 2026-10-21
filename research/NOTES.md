@@ -40,6 +40,9 @@ uv run python -m triage decide --engine llm --text "Please refund my last invoic
 uv run python -m triage eval --engine vega
 uv run python -m triage eval --engine llm
 uv run python -m triage eval --engine llm_structured
+
+# Shareable artifact
+uv run python -m triage compare   # → research/report.md + report.html
 ```
 
 ### LLM engine modes

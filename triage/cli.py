@@ -11,6 +11,7 @@ from triage.complexity import measure
 from triage.contract import EngineName, Ticket
 from triage.engines import get_engine
 from triage.eval import DEFAULT_FIXTURES, run_eval
+from triage.report import DEFAULT_ENGINES, DEFAULT_HTML, DEFAULT_MD, run_compare
 
 
 def _read_body(args: argparse.Namespace) -> str:
@@ -48,6 +49,27 @@ def cmd_complexity(_: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_compare(args: argparse.Namespace) -> int:
+    engines: tuple[EngineName, ...]
+    if args.engines:
+        engines = tuple(args.engines)  # type: ignore[assignment]
+    else:
+        engines = DEFAULT_ENGINES
+    fixtures = Path(args.fixtures) if args.fixtures else DEFAULT_FIXTURES
+    md_path = Path(args.out) if args.out else DEFAULT_MD
+    html_path = Path(args.html) if args.html else DEFAULT_HTML
+    result = run_compare(
+        engines=engines,
+        fixtures=fixtures,
+        md_path=md_path,
+        html_path=html_path,
+    )
+    # Boring CLI: paths only. The report files are the shareable artifact.
+    print(result.md_path)
+    print(result.html_path)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="triage",
@@ -81,6 +103,30 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sub.add_parser("complexity", help="Print LOC stats for each engine module")
     c.set_defaults(func=cmd_complexity)
+
+    cmp_ = sub.add_parser(
+        "compare",
+        help="Run complexity + eval; write research/report.md and report.html",
+    )
+    cmp_.add_argument(
+        "--fixtures",
+        help="JSONL path (default: fixtures/tickets.jsonl)",
+    )
+    cmp_.add_argument(
+        "--engines",
+        nargs="+",
+        choices=("vega", "llm", "llm_structured"),
+        help="Engines to include (default: vega llm llm_structured)",
+    )
+    cmp_.add_argument(
+        "--out",
+        help=f"Markdown output path (default: {DEFAULT_MD})",
+    )
+    cmp_.add_argument(
+        "--html",
+        help=f"HTML output path (default: {DEFAULT_HTML})",
+    )
+    cmp_.set_defaults(func=cmd_compare)
 
     return p
 

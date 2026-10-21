@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>gluecut compare</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1c1917;
+      --muted: #57534e;
+      --line: #d6d3d1;
+      --accent: #0f766e;
+    }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: linear-gradient(160deg, #e7e5e4 0%, var(--bg) 40%, #ecfdf5 100%);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    h1 {
+      font-family: "IBM Plex Serif", Georgia, serif;
+      font-weight: 600;
+      font-size: 2rem;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .sub { color: var(--muted); margin-bottom: 1.75rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(6px);
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+    th {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    tr:first-child th { border-top: 2px solid var(--accent); }
+    td:first-child { font-weight: 600; }
+    .notes {
+      margin-top: 1.75rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>gluecut</h1>
+    <p class="sub">System One vs LLM glue — compare report</p>
+    <!-- markdown mirror for copy/paste; table injected below -->
+    <div id="report"></div>
+    <pre id="md" style="display:none"># gluecut compare report
+
+Generated: `2026-10-19 07:55 UTC` (seeded from measured complexity + terminal eval runs; refresh with `triage compare`)
+
+Fixtures: `fixtures/tickets.jsonl` (n=18, n_scored=17)
+
+LLM client label (if present): `n/a` (set `OPENAI_API_KEY` for live models; otherwise simulated).
+
+## Head-to-head
+
+| Metric | vega | llm | llm_structured |
+|--------|--------|--------|--------|
+| Semantic LOC (fair) | 47 | 93 | 85 |
+| Fair delta vs Vega | 0 | +46 | +38 |
+| Team accuracy | 76.5% | 76.5% | 76.5% |
+| Priority accuracy | 29.4% | 64.7% | 64.7% |
+| Needs-human accuracy | 47.1% | 94.1% | 94.1% |
+| Forced-wrong team | 5.9% | 0.0% | 0.0% |
+| Needs-review rate | 44.4% | 44.4% | 44.4% |
+| Abstain rate | 16.7% | 16.7% | 16.7% |
+| Mean parse attempts | 0.00 | 1.00 | 1.00 |
+| Mean repair rounds | 0.00 | 0.00 | 0.00 |
+
+## Fair complexity notes
+
+- Semantic LOC excludes `http_client` and `offline_simulator`.
+- Freeform still pays `parse_repair` (13 LOC).
+- HTTP client called out separately: 53 LOC (not in semantic delta).
+- Prompt chars — LLM system: 657; Vega criteria: 560.
+
+## Reading for LLM engineers
+
+- **Team accuracy** answers “who got the label right?”
+- **Forced-wrong** answers “who auto-routed a wrong team?”
+- **Fair delta vs Vega** is the glue claim after removing HTTP inflation.
+- JSON mode (`llm_structured`) shrinks freeform glue; it does not remove prompt + validate + confidence policy.
+
+## Reproduce
+
+```bash
+uv run python -m triage compare
+# or
+uv run python -m triage compare --fixtures fixtures/tickets.jsonl
+```
+</pre>
+    <script>
+      // Render the markdown head-to-head table into HTML.
+      const md = document.getElementById('md').textContent;
+      const lines = md.split('\n');
+      const start = lines.findIndex(l => l.startsWith('| Metric |'));
+      const tableLines = [];
+      if (start >= 0) {
+        for (let i = start; i < lines.length; i++) {
+          if (!lines[i].startsWith('|')) break;
+          if (lines[i].includes('---')) continue;
+          tableLines.push(lines[i]);
+        }
+      }
+      function cells(line) {
+        return line.split('|').slice(1, -1).map(s => s.trim());
+      }
+      let html = '<table><thead><tr>';
+      if (tableLines.length) {
+        cells(tableLines[0]).forEach(c => { html += '<th>' + c + '</th>'; });
+        html += '</tr></thead><tbody>';
+        tableLines.slice(1).forEach(line => {
+          html += '<tr>';
+          cells(line).forEach(c => { html += '<td>' + c + '</td>'; });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+      const gen = (md.match(/Generated: `([^`]+)`/) || [])[1] || '';
+      const fix = (md.match(/Fixtures: `([^`]+)`[^\n]*/ ) || [])[0] || '';
+      document.getElementById('report').innerHTML =
+        '<p class="sub">' + (gen ? ('Generated ' + gen + '. ') : '') + fix + '</p>' +
+        html +
+        '<div class="notes"><p>Share <code>research/report.md</code> or this HTML. ' +
+        'CLI: <code>uv run python -m triage compare</code></p></div>';
+    </script>
+  </main>
+</body>
+</html>

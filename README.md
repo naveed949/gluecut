@@ -29,6 +29,9 @@ uv run python -m triage decide --engine llm_structured --text "Please refund my 
 uv run python -m triage eval --engine vega
 uv run python -m triage eval --engine llm --verbose
 uv run python -m triage eval --engine llm_structured
+
+# One-shot shareable report → research/report.md (+ report.html)
+uv run python -m triage compare
 ```
 
 Optional live LLM (otherwise offline JSON simulator):
@@ -36,8 +39,10 @@ Optional live LLM (otherwise offline JSON simulator):
 ```bash
 export OPENAI_API_KEY=...
 # optional: OPENAI_BASE_URL OPENAI_MODEL
-uv run python -m triage eval --engine llm
+uv run python -m triage compare
 ```
+
+Share [`research/report.md`](research/report.md) (or open `research/report.html`).
 
 ## Layout
 
@@ -50,7 +55,7 @@ uv run python -m triage eval --engine llm
 | `triage/engines/llm_client.py` | HTTP / offline transport (excluded from fair semantic delta) |
 | `triage/engines/llm_parse.py` | Fence / embedded-JSON recovery |
 | `fixtures/tickets.jsonl` | Labeled cases (+ notes) |
-| `research/` | Notes + metrics log |
+| `research/` | Notes, metrics, **report.md / report.html** |
 | `vega.py` | Minimal vegaml smoke script |
 
 ## Tests
