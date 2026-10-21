@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MD = REPO_ROOT / "research" / "report.md"
 DEFAULT_HTML = REPO_ROOT / "research" / "report.html"
 
-DEFAULT_ENGINES: tuple[EngineName, ...] = ("vega", "llm", "llm_structured")
+DEFAULT_ENGINES: tuple[EngineName, ...] = ("vega", "llm_schema", "llm_structured")
 
 
 @dataclass
@@ -39,10 +39,11 @@ def _semantic_loc(engine: str, complexity: dict[str, Any]) -> str:
     if engine == "vega":
         return str(core.get("vega", "—"))
     if engine == "llm":
-        v = core.get("vega", 0)
         return str(core.get("llm", 0) + fair.get("parse_repair_code_lines", 0))
     if engine == "llm_structured":
         return str(core.get("llm_structured", "—"))
+    if engine == "llm_schema":
+        return str(core.get("llm_schema", "—"))
     return "—"
 
 
@@ -54,6 +55,8 @@ def _fair_delta(engine: str, complexity: dict[str, Any]) -> str:
         return f"+{fair.get('llm_freeform_semantic_minus_vega', '—')}"
     if engine == "llm_structured":
         return f"+{fair.get('llm_structured_semantic_minus_vega', '—')}"
+    if engine == "llm_schema":
+        return f"+{fair.get('llm_schema_semantic_minus_vega', '—')}"
     return "—"
 
 
