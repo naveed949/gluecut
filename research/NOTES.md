@@ -46,8 +46,15 @@ uv run python -m triage eval --engine llm
 uv run python -m triage eval --engine llm_structured
 
 # Shareable artifact
-uv run python -m triage compare   # → research/report.md + report.html
+uv run python -m triage compare --engines vega llm_schema
+
+# Minimum-bar harness
+uv run python -m triage shadow --engines vega llm_schema   # → disagreements.md
+uv run python -m triage bench --engines vega llm_schema --qps 1
+uv run python -m triage payments-eval --engine llm_schema
 ```
+
+Staff pitch: [`ADOPT.md`](ADOPT.md) · labels: [`RUBRIC.md`](RUBRIC.md) · held-out: `fixtures/triage/held_out.jsonl` (≥100).
 
 ### LLM engine modes
 
@@ -78,13 +85,13 @@ See [`METRICS.md`](METRICS.md) for raw numbers. Short read:
 
 | Signal | Finding |
 |--------|---------|
-| Fair semantic LOC | Freeform **+45** / structured **+37** vs Vega core (HTTP excluded) |
-| Team accuracy (n_scored=17) | **Tied 76.5%** — Vega / llm / llm_structured (`gpt-4o-mini`) |
-| Priority / needs_human | Live LLM **much stronger** (~0.71 / ~0.94 vs Vega 0.29 / 0.47) |
-| Forced-wrong team | Vega **5.9%**; both LLM paths **0%** |
-| Parse layer | Vega **0** attempts; live LLMs 1.0 clean (no repairs) |
+| Fair semantic LOC | Schema baseline **+25** vs Vega |
+| Held-out live (n=110) | **llm_schema 95.5%** team / **0%** forced-wrong vs Vega **73.6%** / **10%** |
+| Latency @ 1 QPS | Vega **~640 ms** (holds 1.0 QPS) vs mini **~1160 ms** (~0.86 QPS) |
+| $ (110 shadow) | Vega **$0** vs mini **~$0.007** |
+| Glue | Still the System One win when accuracy SLO allows escalation |
 
-**Interpretation for LLM engineers:** on this set, **team quality ties**; LLM wins secondary labels and safer auto-route. The System One win that still stands cleanly is **semantic glue LOC** (and zero parse stack). JSON mode helps code shape vs freeform, not accuracy vs freeform here. See [`report.md`](report.md).
+**Interpretation:** live structured LLM wins accuracy/safety; Vega wins $0 + lower latency + less glue. Pitch as **tradeoff**, not replacement — [`ADOPT.md`](ADOPT.md), [`METRICS.md`](METRICS.md).
 
 ## Non-claims
 

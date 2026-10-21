@@ -1,121 +1,41 @@
 # Metrics log
 
-Latest shareable table: [`report.md`](report.md) (`gpt-4o-mini` live, 2026-10-21 18:36 UTC).
+**Canonical live suite (2026-10-22):** `gpt-4o-mini` via `llm_schema` + local Vega 0.8B.  
+Artifacts: [`report.md`](report.md) · [`disagreements.md`](disagreements.md) · [`bench.md`](bench.md) · [`ADOPT.md`](ADOPT.md)
 
-- **2026-10-21 live compare:** Vega + `llm` + `llm_structured` — canonical head-to-head (see report).
-- Spot-check `eval --engine llm` same day: team **76.5%**, forced-wrong **0%**, needs_human **88.2%** (run-to-run variance vs compare’s 94.1% is normal at n=17).
+## Shadow — held-out triage (n=110)
 
-## Complexity (fair breakdown)
+| Engine | team acc | forced-wrong | abstain | needs_review | mean ms | $/dec | $ total (110) |
+|--------|----------|--------------|---------|--------------|---------|-------|---------------|
+| **vega** | 0.736 | 0.100 | 0.109 | 0.309 | **695** | **$0** | **$0** |
+| **llm_schema** (`gpt-4o-mini`) | **0.955** | **0.000** | 0.027 | 0.155 | 1306 | ~$6.7e-5 | ~$0.0073 |
 
-`uv run python -m triage complexity`:
+## Bench — target 1 QPS, limit 30
 
-| Bucket | LOC | Counts as… |
-|--------|-----|------------|
-| `http_client` | 53 | Transport (exclude from semantic claim) |
-| `offline_simulator` | 64 | Test double (exclude) |
-| `parse_repair` | 13 | Freeform fence/JSON recovery |
-| `core_triage` (vega) | 47 | System One mapping |
-| `core_triage` (llm freeform) | 80 | Prompt loop + validate + repair + policy |
-| `core_triage` (llm_structured) | 85 | JSON-mode loop + validate + policy |
+| Engine | achieved QPS | mean / p50 / p95 ms | $/dec | $ total (30) |
+|--------|--------------|---------------------|-------|--------------|
+| vega | **1.006** | **642 / 599 / 811** | **$0** | **$0** |
+| llm_schema | 0.861 | 1162 / 1112 / 1347 | ~$6.8e-5 | ~$0.0021 |
 
-| Fair semantic delta vs Vega | LOC |
-|-----------------------------|-----|
-| Freeform (`core` + `parse_repair`) | **+46** |
-| Structured (`core` only) | **+38** |
+## Compare (fair LOC + accuracy)
 
-| Prompt chars | |
-|--------------|--:|
-| LLM system prompt | 657 |
-| LLM repair prompt | 118 |
-| Vega instructions + criteria | 560 |
+| Metric | vega | llm_schema |
+|--------|------|------------|
+| Semantic LOC (fair) | **48** | 73 |
+| Fair delta vs Vega | **0** | **+25** |
+| Team accuracy | 72.7% | **94.5%** |
+| Priority accuracy | 51.8% | **64.5%** |
+| Needs-human accuracy | 78.2% | **92.7%** |
+| Forced-wrong team | 9.1% | **0.0%** |
 
-## Eval — three engines (post fixture pass)
+## Interpretation for LLM engineers
 
-`n=18`, **n_scored=17** (glue probe excluded), live LLM API for `llm` / `llm_structured`.
+1. **Accuracy / safety:** live structured LLM wins clearly on this held-out set (team ~95% vs ~74%, forced-wrong 0% vs 10%).
+2. **Latency @ ~1 QPS:** Vega is **~2× faster** mean (~640 ms vs ~1160 ms) and holds target QPS; API LLM drops to ~0.86 QPS.
+3. **$:** Vega **$0 API**; mini is cheap per call but non-zero and scales with volume.
+4. **Glue:** schema baseline still **+25 semantic LOC** vs Vega — even the strong path isn’t free of orchestration code.
+5. **Honest adopt line:** use System One when local/$0/typed decide + less glue matter *and* you can live with (or escalate) the accuracy gap; keep `llm_schema` (or similar) when forced-wrong≈0 is the SLO. Shadow both before cutover — see [`ADOPT.md`](ADOPT.md).
 
-| Metric | Vega | LLM freeform | LLM structured |
-|--------|------|--------------|----------------|
-| team_accuracy | **0.765** | **0.765** | **0.765** |
-| priority_accuracy | 0.294 | **0.647** | **0.647** |
-| needs_human_accuracy | 0.471 | **0.941** | **0.941** |
-| forced_wrong_team_rate | 0.059 | **0.0** | **0.0** |
-| needs_review_rate | 0.444 | 0.444 | 0.444 |
-| abstain_rate | 0.167 | 0.167 | 0.167 |
-| mean_parse_attempts | **0** | 1.0 | 1.0 |
-| mean_repair_rounds | **0** | 0.0 | 0.0 |
-| Fair semantic LOC vs Vega | 0 | +46 | +38 |
+## Payments domain
 
-### Raw JSON
-
-**vega**
-```json
-{
-  "engine": "vega",
-  "n": 18,
-  "n_scored": 17,
-  "n_glue_only": 1,
-  "team_accuracy": 0.765,
-  "priority_accuracy": 0.294,
-  "needs_human_accuracy": 0.471,
-  "forced_wrong_team_rate": 0.059,
-  "needs_review_rate": 0.444,
-  "abstain_rate": 0.167,
-  "mean_parse_attempts": 0.0,
-  "mean_repair_rounds": 0.0,
-  "mean_schema_failures": 0.0
-}
-```
-
-**llm**
-```json
-{
-  "engine": "llm",
-  "n": 18,
-  "n_scored": 17,
-  "n_glue_only": 1,
-  "team_accuracy": 0.765,
-  "priority_accuracy": 0.647,
-  "needs_human_accuracy": 0.941,
-  "forced_wrong_team_rate": 0.0,
-  "needs_review_rate": 0.444,
-  "abstain_rate": 0.167,
-  "mean_parse_attempts": 1.0,
-  "mean_repair_rounds": 0.0,
-  "mean_schema_failures": 0.0
-}
-```
-
-**llm_structured**
-```json
-{
-  "engine": "llm_structured",
-  "n": 18,
-  "n_scored": 17,
-  "n_glue_only": 1,
-  "team_accuracy": 0.765,
-  "priority_accuracy": 0.647,
-  "needs_human_accuracy": 0.941,
-  "forced_wrong_team_rate": 0.0,
-  "needs_review_rate": 0.444,
-  "abstain_rate": 0.167,
-  "mean_parse_attempts": 1.0,
-  "mean_repair_rounds": 0.0,
-  "mean_schema_failures": 0.0
-}
-```
-
-## Fixture label pass
-
-| Change | Why |
-|--------|-----|
-| `tech-crash` priority 2 → 1 | Single-user settings crash |
-| `broken-json-marker` `eval.accuracy=false` | Glue probe only |
-| Notes on soft labels | GDPR / pricing / ambiguous documented |
-
-## Interpretation
-
-1. **Team routing tied** at 76.5% across all three — judgment quality on team is not the differentiator here.
-2. **Live LLM wins** priority + needs_human and has **0** forced-wrong; Vega still has ~1/17 forced-wrong.
-3. **`llm` ≈ `llm_structured` on accuracy** this run (clean JSON both ways); structured’s win is **code shape** (+38 vs +46 semantic LOC), not fixture score.
-4. **Glue claim holds:** same team accuracy without parse/repair machinery on Vega; structured shrinks freeform glue but does not match Vega’s zero parse layer.
-5. **n=17 scored** is a sandbox — directional, not a benchmark paper.
+Earlier Vega payments-eval (~55% reason, high review) still stands as “pattern works, not SOTA.” Re-run `payments-eval --engine llm_schema` with the key if you want a live second-domain pair in this log.
