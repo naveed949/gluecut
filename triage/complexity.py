@@ -20,6 +20,7 @@ ENGINE_FILES = {
     "vega": ROOT / "engines" / "vega_engine.py",
     "llm": ROOT / "engines" / "llm_engine.py",
     "llm_structured": ROOT / "engines" / "llm_structured_engine.py",
+    "llm_schema": ROOT / "engines" / "llm_schema_engine.py",
     "llm_client": ROOT / "engines" / "llm_client.py",
     "llm_parse": ROOT / "engines" / "llm_parse.py",
 }
@@ -34,6 +35,7 @@ _BUCKET_BY_QUALNAME = {
     "triage/engines/llm_parse.py::extract_json_object": "parse_repair",
     "triage/engines/llm_engine.py::LlmTriageEngine": "core_triage",
     "triage/engines/llm_structured_engine.py::LlmStructuredTriageEngine": "core_triage",
+    "triage/engines/llm_schema_engine.py::LlmSchemaTriageEngine": "core_triage",
     "triage/engines/vega_engine.py::VegaTriageEngine": "core_triage",
     "triage/engines/vega_engine.py::_load_model": "core_triage",
 }
@@ -146,6 +148,7 @@ def measure() -> ComplexityReport:
     vega_only = _bucket_loc(ENGINE_FILES["vega"]).get("core_triage", 0)
     llm_freeform_core = _bucket_loc(ENGINE_FILES["llm"]).get("core_triage", 0)
     llm_structured_core = _bucket_loc(ENGINE_FILES["llm_structured"]).get("core_triage", 0)
+    llm_schema_core = _bucket_loc(ENGINE_FILES["llm_schema"]).get("core_triage", 0)
     parse_repair = buckets.get("parse_repair", 0)
     http_client = buckets.get("http_client", 0)
     offline_sim = buckets.get("offline_simulator", 0)
@@ -163,6 +166,8 @@ def measure() -> ComplexityReport:
         ),
         # Structured JSON-mode still needs core triage; no parse_repair module.
         "llm_structured_semantic_minus_vega": (llm_structured_core - vega_only),
+        # Strong baseline: Pydantic + json_schema (still more than Vega core).
+        "llm_schema_semantic_minus_vega": (llm_schema_core - vega_only),
         # What critics attribute to "just HTTP":
         "http_client_code_lines": http_client,
         "offline_simulator_code_lines": offline_sim,
@@ -184,6 +189,7 @@ def measure() -> ComplexityReport:
                 "vega": vega_only,
                 "llm": llm_freeform_core,
                 "llm_structured": llm_structured_core,
+                "llm_schema": llm_schema_core,
             },
         },
     )

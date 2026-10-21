@@ -5,6 +5,7 @@ description = "Research CLI: cut LLM prompt/parse glue with System One typed dec
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "pydantic>=2.12.0",
     "requests>=2.34.2",
 ]
 
